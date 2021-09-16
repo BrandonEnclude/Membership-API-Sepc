@@ -1,0 +1,293 @@
+openapi: 3.0.0
+info:
+  version: 0.2.0
+  title: Membership API
+servers:
+  - url: 'https://ncmi--cmisb1.my.salesforce.com/services/apexrest'
+paths:
+  /token/:
+    post:
+      summary: Requests a renewal token to be sent to the user by email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  description: Email address of Contact
+                  type: string
+              required:
+                - email
+      responses:
+        '200':
+          description: Id of the found Contact (Can be null if Contact doesn't yet exist)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Id:
+                    type: string
+                    nullable: true
+  
+  /membership/{token}:
+    get:
+      summary: Validates token and returns Contact, Enquiry, and Membership data
+      parameters:
+        - in: path
+          name: token
+          schema:
+            type: string
+          required: true
+          description: Contact renewal token
+      responses:
+        '200':
+          description: Returned Contact, Enquiry, and Membership data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+        '400':
+          description: Invalid token; could not be decrypted
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+        '401':
+          description: Provided token has expired
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+    post:
+      summary: Validates renewal token and creates an Enquiry / Contact (if applicable)
+      parameters:
+        - in: path
+          name: token
+          schema:
+            type: string
+          required: true
+          description: Membership token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enquiry:
+                  $ref: '#/components/schemas/Enquiry'
+              required:
+                - enquiry
+      responses:
+        '200':
+          description: Updated MembershipResponse, including created Enquiry / Contact (if applicable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipResponse'
+        '400':
+          description: Invalid token / Contact
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+        '401':
+          description: Renewal token Id does not match Contact Id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Error'
+        
+                
+                
+      
+components:
+  schemas:
+    Contact:
+      type: object
+      properties:
+        Id:
+          type: string
+        Application_Source__c:
+          type: string
+          enum: [Web, Phone, Post, Other]
+        FirstName:
+          type: string
+        LastName:
+          type: string
+        Phone:
+          type: string
+        MobilePhone:
+          type: string
+        Email:
+          type: string
+        MailingStreet:
+          type: string
+        Mailingcity:
+          type: string
+          description: Area/Town
+        MailingState:
+          type: string
+          description: City/County
+        MailingPostalCode:
+          type: string
+          description: Eircode
+        MailingCountry:
+          type: string
+        Date_of_Birth__c:
+          type: string
+          description: yyyy-mm-dd
+          format: date
+          pattern: '\d{4}-\d{2}-\d{2}'
+        ecass01__X4_Gender__c:
+          type: string
+          enum: [Male, Female]
+        How_many_children_do_you_mind_in_total__c:
+          type: integer
+        Preschool__c:
+          type: integer
+        Afterschool__c:
+          type: integer
+        I_have_registered_w_Tusla_more_than_3_mt__c:
+          type: string
+          enum: [Yes, No]
+        Agree_to_share_contact_details_w_Parents__c:
+          type: string
+          enum: [Yes, No]
+          
+    Enquiry:
+      type: object
+      properties:
+        Id:
+          type: string
+        FirstName:
+          type: string
+        LastName:
+          type: string
+        RecordTypeId:
+          type: string
+        LeadSource:
+          type: string
+          enum: [Web, Phone, Post, Other, Web Member Change Request]
+        Client_Contact__c:
+          type: string
+        Street:
+          type: string
+        City:
+          type: string
+          description: Area/Town
+        State:
+          type: string
+          description: City/County
+        PostalCode:
+          type: string
+          description: Eircode
+        Web_County_address_picklist__c:
+          type: string
+          enum: [Co Carlow, Co Cavan, ...]
+        Phone:
+          type: string
+        Mobile:
+          type: string
+        Email:
+          type: string
+        Birthdate:
+          type: string
+          pattern: '\d{4}-\d{2}-\d{2}'
+          format: date
+        Gender__c:
+          type: string
+          enum: [Female, Male]
+        How_many_Children_do_you_mind_in_total__c:
+          type: integer
+        Preschool__c:
+          type: integer
+        School_Age__c:
+          type: integer
+        I_have_reg_with_Tusla_more_than_3mth_ago__c:
+          type: string
+          enum: [Yes, No]
+        Agree_to_share_contact_details_w_Parents__c:
+          type: string
+          enum: [Yes, No]
+        Share_with_Parent_County_Match__c:
+          type: string
+          enum: [Yes, No]
+        Agree_to_advertise_on_Childminding_Site__c:
+          type: string
+          enum: [Yes, No]
+        Advertise_County_Match__c:
+          type: string
+          enum: [Carlow, Cavan, ...]
+        I_have_notified_my_local_CCC__c:
+          type: string
+          enum: [Yes, No]
+        Garda_Vetted__c:
+          type: string
+          enum: [Yes, No, I have Applied for Garda Vetting]
+        Garda_Vetted_as_of_Date__c:
+          type: string
+          format: date
+          pattern: '\d{4}-\d{2}-\d{2}'
+        Tusla_eLearning_Child_Safeguarding_Cert__c:
+          type: string
+          enum: [Yes, No]
+        Child_Safeguarding_Protection_Children__c:
+          type: string
+          enum: [Yes, No]
+        Primary_Working_Language__c:
+          type: string
+          enum: [English, Irish, Other]
+        Primary_Working_Language_Other__c:
+          type: string
+        Agree_to_notify_CMI_of_Changes__c:
+          type: string
+          enum: [Yes, No]
+        I_agree_to_CMIs_Terms_and_Conditions__c:
+          type: boolean
+          
+
+          
+    Membership:
+      type: object
+      properties:
+        Id:
+          type: string
+        Name:
+          type: string
+        Amount:
+          type: number
+          multipleOf: 0.01
+          
+    MembershipResponse:
+      type: object
+      properties:
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        enquiries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Enquiry'
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+          
+    Error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
